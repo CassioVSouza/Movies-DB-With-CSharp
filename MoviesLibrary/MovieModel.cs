@@ -1,0 +1,15 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MoviesLibrary
+{
+    public class MovieModel
+    {
+        public string? Name { get; set; }
+        public int? Rated { get; set; }
+        public int? Score { get; set; }
+    }
+}
