@@ -20,7 +20,7 @@ namespace Movies
             {
                 do
                 {
-                    Console.WriteLine("Welcome, What do you want to do?\n1 - Add Movie\n2 - Show Movies\n3 - Edit Movie\n4 - Delete Movie");
+                    Console.WriteLine("Welcome, What do you want to do?\n1 - Add Movie\n2 - Show Movies\n3 - Edit Movie\n4 - Delete Movie\n5- Exit");
                     Choice = Convert.ToInt32(Console.ReadLine());
 
                     switch (Choice)
@@ -38,6 +38,9 @@ namespace Movies
                         case 4:
                             dataBaseManager.ShowMoviesDB();
                             dataBaseManager.DeleteMovie();
+                            break;
+                        case 5:
+                            Console.WriteLine("Exited!");
                             break;
                         default: Console.WriteLine("Insert a valid number!");
                             break;
