@@ -8,6 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AccountAPI\AccountAPI.csproj" />
+    <ProjectReference Include="..\MoviesLibrary\MoviesLibrary.csproj" />
   </ItemGroup>
 
 </Project>

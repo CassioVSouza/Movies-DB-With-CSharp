@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using BCrypt;
 
 namespace AccountAPI
 {
@@ -58,6 +59,24 @@ namespace AccountAPI
         {
             return !string.IsNullOrWhiteSpace(Account.Name) && !string.IsNullOrWhiteSpace(Account.Email) &&
                    !string.IsNullOrWhiteSpace(Account.PhoneNumber) && !string.IsNullOrWhiteSpace(Account.Password) ? true : false; ;
+        }
+
+    }
+
+    public class PasswordManager
+    {
+        public string HashPassword(AccountModel Account)
+        {
+            string salt = BCrypt.Net.BCrypt.GenerateSalt();
+
+            string HashPassword = BCrypt.Net.BCrypt.HashPassword(Account.Password, salt);
+
+            return HashPassword;
+        }
+
+        public bool CheckPassword(string DBPassword, string UserPassword)
+        {
+            return BCrypt.Net.BCrypt.Verify(UserPassword, DBPassword);
         }
     }
 }
