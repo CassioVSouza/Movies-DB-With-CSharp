@@ -42,6 +42,7 @@ namespace AccountAPI
         {
             Console.Write("Insert your email: ");
             string Email = Console.ReadLine() ?? string.Empty;
+
             return Email;
         }
 
@@ -49,6 +50,7 @@ namespace AccountAPI
         {
             Console.Write("Insert your password: ");
             string Password = Console.ReadLine() ?? string.Empty;
+
             return Password;
         }
 
