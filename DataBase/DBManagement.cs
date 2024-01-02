@@ -1,9 +1,11 @@
-﻿using System.Data.SQLite;
+﻿// Importing necessary libraries
+using System.Data.SQLite;
 using MoviesLibrary;
 using AccountAPI;
 
 namespace DataBase
 {
+    // Class for managing the SQLite database operations
     public class DataBaseManager : IDatabase, IDisposable
     {
         private readonly string _stringConnection;
@@ -12,14 +14,17 @@ namespace DataBase
         private int? _Id;
         private bool disposed = false;
 
+        // FileHandling instance for logging purposes
         FileHandling log = new FileHandling();
 
+        // Implementation of IDisposable interface
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        // Protected method for disposing resources
         protected virtual void Dispose(bool disposing)
         {
             if (!disposed)
@@ -33,16 +38,20 @@ namespace DataBase
             }
         }
 
+        // Destructor to ensure disposal of resources
         ~DataBaseManager()
         {
             Dispose(false);
         }
 
+        // Constructor to initialize the database connection
         public DataBaseManager(string connection)
         {
             _stringConnection = connection;
             _connection = new SQLiteConnection(connection);
         }
+
+        // Method to initialize the database and create necessary tables
         public void InitializeDataBase()
         {
             string CreateMovieTable = "CREATE TABLE IF NOT EXISTS Movies (MovieID INTEGER PRIMARY KEY AUTOINCREMENT, Title TEXT NOT NULL, " +
@@ -76,6 +85,7 @@ namespace DataBase
             }
         }
 
+        // Method to insert movie data into the database
         public void InsertData(MovieModel movie, string Email)
         {
             string InsertSQLCommand = "INSERT INTO Movies (Title, Genre, ReleaseYear, UserID) VALUES (@Title, @Genre, @ReleaseYear, @UserID)";
@@ -101,6 +111,7 @@ namespace DataBase
             }
         }
 
+        // Method to retrieve and display movies from the database for a specific user
         public void ShowMoviesDB(string Email)
         {
             string SQLiteCommand = "SELECT * FROM Movies WHERE UserID = @UserID";
@@ -135,6 +146,7 @@ namespace DataBase
             }
         }
 
+        // Method to search and display movies based on a specified criteria
         public void ShowSearchedMovie(string searchInput, string Email)
         {
             string whereClause = string.Empty;
@@ -221,6 +233,7 @@ namespace DataBase
             }
         }
 
+        // Method to edit movie information in the database
         public void EditMovies(MovieModel movie, string Email)
         {
             Console.Write("Insert the Name of the movie that you want do edit: ");
@@ -265,6 +278,7 @@ namespace DataBase
             }
         }
 
+        // Method to delete a movie from the database
         public void DeleteMovie(string Email)
         {
             Console.Write("Name of the movie that you want to delete: ");
@@ -303,6 +317,7 @@ namespace DataBase
             }
         }
 
+        // Method to create a user account in the database
         public void CreateAccount(AccountModel Account)
         {
             PasswordManager passwordManager = new PasswordManager();
@@ -338,7 +353,7 @@ namespace DataBase
             }
         }
 
-
+        // Method to check if an email already exists in the database
         public bool CheckIfEmailExists(string Email)
         {
             string SQLiteCommand = "SELECT * FROM User WHERE Email = @Email";
@@ -373,6 +388,7 @@ namespace DataBase
             return false;
         }
 
+        // Method to retrieve hashed password for a specified email from the database
         public string CheckPassword(string Password, string Email)
         {
             _password = Password;
@@ -406,6 +422,7 @@ namespace DataBase
             return "Password not finded!";
         }
 
+        // Method to get the User ID for a specified email
         private int GetUserID(string Email)
         {
             string SQLiteSelectCommand = "SELECT * FROM User WHERE Email = @Email";
@@ -436,7 +453,7 @@ namespace DataBase
             return -1;
         }
 
-
+        // Method to close the database connection
         public void CloseDatabase()
         {
             _connection.Close();

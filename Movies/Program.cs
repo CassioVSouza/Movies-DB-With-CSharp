@@ -1,29 +1,43 @@
-﻿
+﻿using System;
 using MoviesLibrary;
 using AccountAPI;
 using DataBase;
 
 namespace Main
 {
+    /// <summary>
+    /// Main program class responsible for handling user interactions, authentication, and movie-related options.
+    /// </summary>
     public class Program
     {
+        // Entry point of the application
         static void Main(string[] args)
         {
+            // Initialize FileHandling instance for logging and retrieving connection string
             FileHandling logAndConnectionString = new FileHandling();
             string ConnectionString = logAndConnectionString.GetConnectionString();
-            DataBaseManager dataBaseManager = new DataBaseManager(ConnectionString);          
+
+            // Initialize DataBaseManager for database operations
+            DataBaseManager dataBaseManager = new DataBaseManager(ConnectionString);
+
+            // Initialize UserAuthentication for user registration and login
             UserAuthentication userAuthentication = new UserAuthentication();
+
+            // Initialize database
             dataBaseManager.InitializeDataBase();
 
+            // Display user options
             Console.Write("Welcome to the system, do you want to:\n1 - Register\n2 - Login\n3 - Exit");
 
-            if(!int.TryParse(Console.ReadLine(), out int AccountChoice)) 
+            // Validate user input for account choice
+            if (!int.TryParse(Console.ReadLine(), out int AccountChoice))
             {
                 Console.WriteLine("Please, insert only numbers!");
             }
 
             try
             {
+                // Perform actions based on user choice
                 switch (AccountChoice)
                 {
                     case 1:
@@ -54,21 +68,30 @@ namespace Main
             }
             finally
             {
+                // Close the database connection
                 dataBaseManager.CloseDatabase();
             }
         }
 
+        /// <summary>
+        /// Method for handling movie-related options after user authentication.
+        /// </summary>
+        /// <param name="ConnectionString">The database connection string.</param>
+        /// <param name="accountModel">The user's account model.</param>
         public static void MoviesOptions(string ConnectionString, AccountModel accountModel)
         {
+            // Initialize DataBaseManager for movie-related database operations
             DataBaseManager dataBaseManager = new DataBaseManager(ConnectionString);
             MoviesManager moviesManager = new MoviesManager();
             FileHandling log = new FileHandling();
 
             try
             {
+                // Initialize database
                 dataBaseManager.InitializeDataBase();
                 int userOption;
-                
+
+                // Display movie-related options in a loop
                 do
                 {
                     Console.WriteLine("Welcome, What do you want to do?\n1 - Add Movie\n2 - Show Movies\n3 - Edit Movie\n4 - Delete Movie\n5 - Search Movie\n6 - Exit");
@@ -76,7 +99,8 @@ namespace Main
                     {
                         Console.WriteLine("Insert only numbers!");
                     }
-                    
+
+                    // Perform actions based on user choice
                     switch (userOption)
                     {
                         case 1:
@@ -125,30 +149,40 @@ namespace Main
             }
             finally
             {
+                // Close the database connection
                 dataBaseManager.CloseDatabase();
             }
         }
-
     }
 
+    /// <summary>
+    /// Class for handling user authentication, registration, and login.
+    /// </summary>
     class UserAuthentication
     {
         private string? _password;
         private bool? _authenticated = false;
 
+        // FileHandling instance for logging and retrieving connection string
         FileHandling logAndConnectionString = new FileHandling();
+
+        // Method for registering a new user
         internal void RegisterUser()
         {
+            // Retrieve database connection string
             string ConnectionString = logAndConnectionString.GetConnectionString();
 
+            // Initialize AccountManagement and AccountModel
             AccountManagement accountManagement = new AccountManagement();
             AccountModel accountModel = new AccountModel();
 
+            // Initialize DataBaseManager for database operations
             DataBaseManager dataBaseManager = new DataBaseManager(ConnectionString);
             dataBaseManager.InitializeDataBase();
 
             try
             {
+                // Gather user input for name, email, and password
                 while (true)
                 {
                     Console.Write("Please, insert your name: ");
@@ -183,6 +217,8 @@ namespace Main
                         break;
                     }
                 }
+
+                // Redirect to movie-related options upon successful registration
                 if ((bool)_authenticated)
                 {
                     Program.MoviesOptions(logAndConnectionString.GetConnectionString(), accountModel);
@@ -201,23 +237,29 @@ namespace Main
                 logAndConnectionString.SaveInLog(ex.Message);
             }
 
+            // Create the user account and close the database connection
             dataBaseManager.CreateAccount(accountModel);
             dataBaseManager.CloseDatabase();
         }
 
+        // Method for user login
         internal void LoginUser()
         {
+            // Retrieve database connection string
             string ConnectionString = logAndConnectionString.GetConnectionString();
 
+            // Initialize AccountManagement, AccountModel, and PasswordManager
             AccountManagement accountManagement = new AccountManagement();
             AccountModel accountModel = new AccountModel();
             PasswordManager passwordManager = new PasswordManager();
 
+            // Initialize DataBaseManager for database operations
             DataBaseManager dataBaseManager = new DataBaseManager(ConnectionString);
             dataBaseManager.InitializeDataBase();
 
             try
             {
+                // Gather user input for email and password
                 while (true)
                 {
                     Console.Write("Please, insert your email: ");
@@ -239,6 +281,8 @@ namespace Main
                         break;
                     }
                 }
+
+                // Redirect to movie-related options upon successful login
                 if ((bool)_authenticated)
                 {
                     Program.MoviesOptions(logAndConnectionString.GetConnectionString(), accountModel);
@@ -256,6 +300,8 @@ namespace Main
             {
                 logAndConnectionString.SaveInLog(ex.Message);
             }
+
+            // Close the database connection
             dataBaseManager.CloseDatabase();
         }
     }
