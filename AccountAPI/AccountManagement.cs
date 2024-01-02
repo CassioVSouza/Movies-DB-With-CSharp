@@ -1,82 +1,62 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading.Tasks;
-using BCrypt;
+﻿using DataBase;
+using System.Text.RegularExpressions;
 
 namespace AccountAPI
 {
     public class AccountManagement
     {
-        public AccountModel RegisterAccount()
+        public bool CheckName(string Name)
         {
-            AccountModel Account = new AccountModel();
-            Console.WriteLine("Tell us your name: ");
-            Account.Name = Console.ReadLine() ?? "";
-
-            Console.WriteLine("Tell us your email: ");
-            Account.Email = Console.ReadLine() ?? "";
-
-            Console.WriteLine("Tell us your password: ");
-            Account.Password = (Console.ReadLine()) ?? "";
-
-            Console.WriteLine("Tell us your Phone Number: ");
-            Account.PhoneNumber = Console.ReadLine() ?? "";
-
-            if (CheckNull(Account))
+            if(Name.Length >= 8 && Name.Length <= 30)
             {
-                Console.WriteLine("Registering Account...");
-                Account.SucessfullyCreated = true;
-                return Account;
+                return true;
             }
             else
             {
-                Console.WriteLine("You can't let fields empty!");
+                Console.WriteLine("Insert a valid name beetwen 8 and 30 characters!");
             }
-            return Account;
- 
+            return false;
         }
 
-        public string LoginAccountEmail()
+        public bool CheckPatternEmail(string Email)
         {
-            Console.Write("Insert your email: ");
-            string Email = Console.ReadLine() ?? string.Empty;
+            string emailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            Regex regex = new Regex(emailPattern);
 
-            return Email;
+            if(regex.IsMatch(Email)) 
+            {
+                return true;
+            }
+            Console.WriteLine("Insert a valid email! Example: userexample@gmail.com");
+            return false;
         }
 
-        public string LoginAccountPassword()
+        public bool CheckPatternPassword(string Password) 
         {
-            Console.Write("Insert your password: ");
-            string Password = Console.ReadLine() ?? string.Empty;
-
-            return Password;
+            if(Password.Length >= 2)
+            {
+                return true;
+            }
+            Console.WriteLine("Min of 2");
+            return false;
         }
-
-        private bool CheckNull(AccountModel Account)
-        {
-            return !string.IsNullOrWhiteSpace(Account.Name) && !string.IsNullOrWhiteSpace(Account.Email) &&
-                   !string.IsNullOrWhiteSpace(Account.PhoneNumber) && !string.IsNullOrWhiteSpace(Account.Password) ? true : false; ;
-        }
-
     }
 
     public class PasswordManager
     {
+       FileHandling log = new FileHandling();
         public string HashPassword(AccountModel Account)
         {
-            string salt = BCrypt.Net.BCrypt.GenerateSalt();
+                string salt = BCrypt.Net.BCrypt.GenerateSalt();
 
-            string HashPassword = BCrypt.Net.BCrypt.HashPassword(Account.Password, salt);
+                string HashPassword = BCrypt.Net.BCrypt.HashPassword(Account.Password, salt);
 
-            return HashPassword;
+                return HashPassword;
         }
 
         public bool CheckPassword(string DBPassword, string UserPassword)
         {
-            return BCrypt.Net.BCrypt.Verify(UserPassword, DBPassword);
+                return BCrypt.Net.BCrypt.Verify(UserPassword, DBPassword);
         }
     }
 }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace DataBase
 {
     public class FileHandling
@@ -18,6 +13,10 @@ namespace DataBase
                 {
                     file.WriteLine(Error);
                 }
+            }
+            catch (FileNotFoundException ex)
+            {
+                Console.WriteLine($"The file was not found!: {ex}");
             }
             catch (Exception ex)
             {

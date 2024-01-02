@@ -1,76 +1,95 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DataBase;
 
 namespace MoviesLibrary
 {
     public class MoviesManager
     {
         MovieModel movieModel = new MovieModel();
+        FileHandling log = new FileHandling();
         public MovieModel NewMovie()
         {
-            do
-            {
-                Console.Write("Name of the movie: ");
-                string Name = Console.ReadLine() ?? "";
+            Console.Write("Title of the movie: ");
+            movieModel.Name = GetInputString();
 
-                if (!string.IsNullOrWhiteSpace(Name))
-                {
-                    movieModel.Name = Name;
-                    break;
-                }
-                else
-                {
-                    Console.WriteLine("You need to write something!");
-                }
-            } while (true);
+            Console.Write("Genre of the movie: ");
+            movieModel.Genre = GetInputString();
 
-            do
-            {
-                Console.Write("Rating of the movie: ");
-                if (int.TryParse(Console.ReadLine(), out int Rated) && CheckingRate(Rated))
-                {
-                    movieModel.Rated = Rated;
-                    break;
-                }
-            } while (true);
-
-            do
-            {
-                Console.Write("Score of the movie: ");
-                if (int.TryParse(Console.ReadLine(), out int Score) && Score >= 0 && Score <= 100)
-                {
-                    movieModel.Score = Score;
-                    break;
-                }
-                else
-                {
-                    Console.WriteLine("Insert only valid numbers beetwen 0 and 100!");
-                }
-            } while (true);
-
+            Console.Write("Release year of the movie: ");
+            movieModel.ReleaseYear = GetInputInt();
 
             return movieModel;
         }
 
-        private bool CheckingRate(int Rated)
+        private string GetInputString()
         {
-            if(Rated == 10 || Rated == 12 || Rated == 14 || Rated == 16 || Rated == 18)
+            try
             {
-                return true;
+                do
+                {
+                    string Input = Console.ReadLine() ?? "";
+
+                    if (!string.IsNullOrWhiteSpace(Input))
+                    {
+                        return Input;
+                    }
+                    else
+                    {
+                        Console.Write("You need to write something: ");
+                    }
+                } while (true);
             }
-            else
+            catch (IOException ex)
             {
-                Console.WriteLine("Insert only valid numbers! They are: 10, 12, 14, 16, 18");
+                log.SaveInLog(ex.Message);
             }
-            return false;
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            return "Error";
+        }
+
+        private int GetInputInt()
+        {
+            int ActualYear = DateTime.Now.Year;
+            try
+            {
+                do
+                {
+                    int.TryParse(Console.ReadLine() ?? "", out int Input);
+
+                    if (Input >= 1500 && Input <= ActualYear)
+                    {
+                        return Input;
+                    }
+                    else
+                    {
+                        Console.Write($"Insert only valid numbers beetwen 1500 and {ActualYear}: ");
+                    }
+                } while (true);
+            }
+            catch (IOException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            return 0;
         }
 
         public string SearchMovies()
         {
-            Console.WriteLine("How do you want to search?\n1 - By Name\n2 - By Rating\n3 - By Score");
+            Console.WriteLine("How do you want to search?\n1 - By Title\n2 - By Genre\n3 - By Year");
             if(!int.TryParse(Console.ReadLine(), out int Choice))
             {
                 Console.WriteLine("Insert only numbers!");
@@ -79,13 +98,16 @@ namespace MoviesLibrary
             switch(Choice)
             {
                 case 1:
-                    return SearchByName();
+                    Console.Write("Title: ");
+                    return SearchString("T ");
                 
                 case 2:
-                    return SearchByRating();
+                    Console.Write("Genre: ");
+                    return SearchString("G ");
 
                 case 3:
-                    return SearchByScore();
+                    Console.Write("Release Year: ");
+                    return SearchInt("R ");
 
                 default:
                     Console.WriteLine("Insert a valid number!");
@@ -94,55 +116,70 @@ namespace MoviesLibrary
             return "Failed Search";
         }
 
-        private string SearchByName()
+        private string SearchString(string searchType) 
         {
-            do
+            try
             {
-                Console.Write("Name: ");
-                string Name = Console.ReadLine() ?? "";
-                if (string.IsNullOrWhiteSpace(Name))
+                do
                 {
-                    Console.WriteLine("Please, insert something!");
-                }
-                else
-                {
-                    return "N " + Name;
-                }
-            } while (true);
+                    string Input = Console.ReadLine() ?? "";
+                    if (string.IsNullOrWhiteSpace(Input))
+                    {
+                        Console.Write("Please, insert something!: ");
+                    }
+                    else
+                    {
+                        return searchType + Input;
+                    }
+                } while (true);
+            }
+            catch (IOException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            return "Error";
         }
 
-        private string SearchByRating()
+        private string SearchInt(string searchType)
         {
-            do
+            int ActualYear = DateTime.Now.Year;
+            try
             {
-                Console.Write("Rating: ");
-                if(int.TryParse(Console.ReadLine(), out int Rated) && CheckingRate(Rated))
+                do
                 {
-                    string StringRating = "R " + Rated.ToString();
-                    return StringRating;
-                }
-                else
-                {
-                    Console.WriteLine("Please, insert only numbers!");
-                }
-            } while (true);
-        }
+                    if (int.TryParse(Console.ReadLine(), out int Input) && Input >= 1500 && Input <= ActualYear)
+                    {
+                        string StringScore = searchType + Input.ToString();
+                        return StringScore;
+                    }
+                    else
+                    {
+                        Console.Write($"Please, insert only valid numbers beetwen 1500 and {ActualYear}: ");
+                    }
+                } while (true);
+            }
+            catch (IOException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
 
-        private string SearchByScore()
-        {
-            do
-            {
-                Console.Write("Score: ");
-                if (int.TryParse(Console.ReadLine(), out int Score) && Score >= 0 && Score <= 100)
-                {
-                    string StringScore = "S " + Score.ToString();
-                    return StringScore;
-                }
-                else
-                {
-                    Console.WriteLine("Please, insert only valid numbers beetwen 0 and 100!");
-                }
-            } while (true);
+            return "Error";
         }
     }
 }

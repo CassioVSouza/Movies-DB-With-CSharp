@@ -3,13 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Movies", "Movies\Movies.csproj", "{873EF46A-4C80-424D-8422-FDFDF515C41E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Main", "Movies\Main.csproj", "{873EF46A-4C80-424D-8422-FDFDF515C41E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{396183BD-C05E-4634-A8D3-1119AE3236C9} = {396183BD-C05E-4634-A8D3-1119AE3236C9}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MoviesLibrary", "MoviesLibrary\MoviesLibrary.csproj", "{47242940-404D-460B-94F7-E5F60C50C4DB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AccountAPI", "AccountAPI\AccountAPI.csproj", "{396183BD-C05E-4634-A8D3-1119AE3236C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBase", "DataBase\DataBase.csproj", "{A7ECDC0B-5446-4418-9E06-59712DC7F7D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataBase", "DataBase\DataBase.csproj", "{A7ECDC0B-5446-4418-9E06-59712DC7F7D5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Account", "Account", "{D7F7BC7D-74B6-43EC-B9A4-FE00237368EB}"
 EndProject
@@ -18,6 +21,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Main", "Main", "{7B320E1F-F9FF-4452-BD94-8C126A951986}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Movies", "Movies", "{B089D5E2-BB32-41BD-9A10-BD157D60259A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FileHandling", "FileHandling", "{0D791A94-E3AA-4329-B9F2-33A54950D9CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileHandling", "FileHandling\FileHandling.csproj", "{823104E8-8128-4E57-9AA0-E0D1E97AE112}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +48,10 @@ Global
 		{A7ECDC0B-5446-4418-9E06-59712DC7F7D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7ECDC0B-5446-4418-9E06-59712DC7F7D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7ECDC0B-5446-4418-9E06-59712DC7F7D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{823104E8-8128-4E57-9AA0-E0D1E97AE112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{823104E8-8128-4E57-9AA0-E0D1E97AE112}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{823104E8-8128-4E57-9AA0-E0D1E97AE112}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{823104E8-8128-4E57-9AA0-E0D1E97AE112}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +61,7 @@ Global
 		{47242940-404D-460B-94F7-E5F60C50C4DB} = {B089D5E2-BB32-41BD-9A10-BD157D60259A}
 		{396183BD-C05E-4634-A8D3-1119AE3236C9} = {D7F7BC7D-74B6-43EC-B9A4-FE00237368EB}
 		{A7ECDC0B-5446-4418-9E06-59712DC7F7D5} = {94D8EF0C-08E4-42CB-8EFC-AA513FB97481}
+		{823104E8-8128-4E57-9AA0-E0D1E97AE112} = {0D791A94-E3AA-4329-B9F2-33A54950D9CD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1EE88155-65D0-41CA-A923-15B023A68CE1}

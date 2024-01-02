@@ -1,18 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using MoviesLibrary;
 using AccountAPI;
 
 namespace DataBase
 {
-    public class DataBaseManager
+    public class DataBaseManager : IDatabase, IDisposable
     {
         private readonly string _stringConnection;
         private SQLiteConnection _connection;
+        private string? _password;
+        private int? _Id;
+        private bool disposed = false;
+
+        FileHandling log = new FileHandling();
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    _connection?.Close();
+                    _connection?.Dispose();
+                }
+                disposed = true;
+            }
+        }
+
+        ~DataBaseManager()
+        {
+            Dispose(false);
+        }
 
         public DataBaseManager(string connection)
         {
@@ -21,35 +45,48 @@ namespace DataBase
         }
         public void InitializeDataBase()
         {
-            _connection.Open();
+            string CreateMovieTable = "CREATE TABLE IF NOT EXISTS Movies (MovieID INTEGER PRIMARY KEY AUTOINCREMENT, Title TEXT NOT NULL, " +
+                                      "Genre TEXT NOT NULL, ReleaseYear INTEGER NOT NULL, UserID INTEGER, FOREIGN KEY (UserID) REFERENCES User(UserID))";
 
-            string CreateMovieTable = "CREATE TABLE IF NOT EXISTS Movies (ID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, " +
-                                      "Rated INTEGER NOT NULL, Score INTEGER NOT NULL)";
+            string CreateAccountsTable = "CREATE TABLE IF NOT EXISTS User (UserID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                                         "Name TEXT NOT NULL, Email TEXT NOT NULL, Password TEXT NOT NULL)";
 
-            string CreateAccountsTable = "CREATE TABLE IF NOT EXISTS Accounts (ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                         "Name TEXT NOT NULL, Email TEXT NOT NULL, Password TEXT NOT NULL, PhoneNumber TEXT NOT NULL)";
-
-            using (SQLiteCommand command = new SQLiteCommand(CreateAccountsTable, _connection))
+            try
             {
-                command.ExecuteNonQuery();
-                using (SQLiteCommand secondCommand = new SQLiteCommand(CreateMovieTable, _connection))
-                {
-                    secondCommand.ExecuteNonQuery();
-                }
-            }
+                _connection.Open();
 
-            Console.WriteLine("Connected!");
+                using (SQLiteCommand command = new SQLiteCommand(CreateAccountsTable, _connection))
+                {
+                    command.ExecuteNonQuery();
+                    using (SQLiteCommand secondCommand = new SQLiteCommand(CreateMovieTable, _connection))
+                    {
+                        secondCommand.ExecuteNonQuery();
+                    }
+                }
+
+                Console.WriteLine("Database Connected!");
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
         }
 
-        public void InsertData(MovieModel movie)
+        public void InsertData(MovieModel movie, string Email)
         {
-            string InsertSQLCommand = "INSERT INTO Movies (Name, Rated, Score) VALUES (@Name, @Rated, @Score)";
+            string InsertSQLCommand = "INSERT INTO Movies (Title, Genre, ReleaseYear, UserID) VALUES (@Title, @Genre, @ReleaseYear, @UserID)";
+            _Id = GetUserID(Email);
 
             using (SQLiteCommand command = new SQLiteCommand(InsertSQLCommand, _connection))
             {
-                command.Parameters.AddWithValue("@Name", movie.Name);
-                command.Parameters.AddWithValue("@Rated", movie.Rated);
-                command.Parameters.AddWithValue("@Score", movie.Score);
+                command.Parameters.AddWithValue("@Title", movie.Name);
+                command.Parameters.AddWithValue("@Genre", movie.Genre);
+                command.Parameters.AddWithValue("@ReleaseYear", movie.ReleaseYear);
+                command.Parameters.AddWithValue("@UserID", _Id);
 
                 int rowsAffected = command.ExecuteNonQuery();
 
@@ -64,83 +101,67 @@ namespace DataBase
             }
         }
 
-        public void ShowMoviesDB()
+        public void ShowMoviesDB(string Email)
         {
-            string SQLiteCommand = "SELECT * FROM Movies";
+            string SQLiteCommand = "SELECT * FROM Movies WHERE UserID = @UserID";
 
-            using (SQLiteCommand command = new SQLiteCommand(SQLiteCommand, _connection))
+            _Id = GetUserID(Email);
+
+            try
             {
-                using (SQLiteDataReader reader = command.ExecuteReader())
+                using (SQLiteCommand command = new SQLiteCommand(SQLiteCommand, _connection))
                 {
-                    while (reader.Read())
+                    command.Parameters.AddWithValue("@UserID", _Id);
+                    using (SQLiteDataReader reader = command.ExecuteReader())
                     {
-                        string MovieName = reader["Name"].ToString() ?? string.Empty;
-                        int MovieRated = Convert.ToInt32(reader["Rated"]);
-                        int MovieScore = Convert.ToInt32(reader["Score"]);
+                        while (reader.Read())
+                        {
+                            string MovieName = reader["Title"].ToString() ?? string.Empty;
+                            string MovieGenre = reader["Genre"].ToString() ?? string.Empty;
+                            int MovieYear = Convert.ToInt32(reader["ReleaseYear"]);
 
-                        Console.WriteLine($"Name: {MovieName}, Rating +{MovieRated}, Score {MovieScore}");
+                            Console.WriteLine($"Name: {MovieName}, Genre: {MovieGenre}, Release Year: {MovieYear}");
+                        }
                     }
                 }
             }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
         }
 
-        public void ShowSearchedMovie(string searchInput)
+        public void ShowSearchedMovie(string searchInput, string Email)
         {
-            FileHandling log = new FileHandling();
-
             string whereClause = string.Empty;
             string parameterName = string.Empty;
-
+            _Id = GetUserID(Email)
+;
             try
             {
                 if (searchInput.Length >= 2)
                 {
                     switch (searchInput[0])
                     {
-                        case 'N':
-                            whereClause = "Name = @Name";
-                            parameterName = "@Name";
+                        case 'T':
+                            whereClause = "Title = @Title";
+                            parameterName = "@Title";
+                            break;
+                        case 'G':
+                            whereClause = "Genre = @Genre";
+                            parameterName = "@Genre";
                             break;
                         case 'R':
-                            whereClause = "Rated = @Rated";
-                            parameterName = "@Rated";
-                            break;
-                        case 'S':
-                            whereClause = "Score = @Score";
-                            parameterName = "@Score";
+                            whereClause = "ReleaseYear = @ReleaseYear";
+                            parameterName = "@ReleaseYear";
                             break;
                         default:
                             Console.WriteLine("Invalid search input.");
                             return;
-                    }
-
-                    int searchValue;
-                    int.TryParse(searchInput, out searchValue);
-
-                    string sqlCommand = $"SELECT * FROM Movies WHERE {whereClause}";
-
-                    using (SQLiteCommand command = new SQLiteCommand(sqlCommand, _connection))
-                    {
-                        if (searchInput[0] == 'N')
-                        {
-                            command.Parameters.AddWithValue(parameterName, searchInput.Substring(2));
-                        }
-                        else if (searchInput[0] == 'R' || searchInput[0] == 'S')
-                        {
-                            command.Parameters.AddWithValue(parameterName, searchValue);
-                        }
-
-                        using (SQLiteDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string movieName = reader["Name"].ToString() ?? string.Empty;
-                                int rated = Convert.ToInt32(reader["Rated"]);
-                                int score = Convert.ToInt32(reader["Score"]);
-
-                                Console.WriteLine($"Name: {movieName}, Rating: +{rated}, Score: {score}");
-                            }
-                        }
                     }
                 }
                 else
@@ -148,60 +169,137 @@ namespace DataBase
                     Console.WriteLine("Invalid search input.");
                 }
             }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+
+
+            int searchValue;
+            int.TryParse(searchInput.Substring(2), out searchValue);
+
+            string sqlCommand = $"SELECT * FROM Movies WHERE {whereClause} AND UserID = @UserID";
+
+            try
+            {
+                using (SQLiteCommand command = new SQLiteCommand(sqlCommand, _connection))
+                {
+                    command.Parameters.AddWithValue("@UserID", _Id);
+                    if (searchInput[0] == 'T' || searchInput[0] == 'G')
+                    {
+                        command.Parameters.AddWithValue(parameterName, searchInput.Substring(2));
+                    }
+                    else if (searchInput[0] == 'R')
+                    {
+                        command.Parameters.AddWithValue(parameterName, searchValue);
+                    }
+
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string movieName = reader["Title"].ToString() ?? string.Empty;
+                            string Genre = reader["Genre"].ToString() ?? string.Empty;
+                            int ReleaseYear = Convert.ToInt32(reader["ReleaseYear"]);
+
+                            Console.WriteLine($"Title: {movieName}, Genre: {Genre}, Release Year: {ReleaseYear}");
+                        }
+                    }
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
             catch (Exception ex)
             {
                 log.SaveInLog(ex.Message);
             }
         }
 
-        public void EditMovies(MovieModel movie)
+        public void EditMovies(MovieModel movie, string Email)
         {
             Console.Write("Insert the Name of the movie that you want do edit: ");
             string MovieChoice = Console.ReadLine() ?? string.Empty;
+            _Id = GetUserID(Email);
 
-            string updateSqlCommand = "UPDATE Movies SET Name = @NewName, Rated = @Rated, Score = @Score WHERE Name = @OldName";
+            string updateSqlCommand = "UPDATE Movies SET Title = @NewName, Genre = @Genre, ReleaseYear = @ReleaseYear WHERE Title = @OldName AND UserID = @UserID";
 
-            using (SQLiteCommand command = new SQLiteCommand(updateSqlCommand, _connection))
+            try
             {
-                command.Parameters.AddWithValue("@OldName", MovieChoice);
-                command.Parameters.AddWithValue("@NewName", movie.Name);
-                command.Parameters.AddWithValue("@Rated", movie.Rated);
-                command.Parameters.AddWithValue("@Score", movie.Score);
-
-                int rowsAffected = command.ExecuteNonQuery();
-
-                if (rowsAffected > 0)
+                using (SQLiteCommand command = new SQLiteCommand(updateSqlCommand, _connection))
                 {
-                    Console.WriteLine("Successfully updated movie information.");
+                    command.Parameters.AddWithValue("@OldName", MovieChoice);
+                    command.Parameters.AddWithValue("@UserID", _Id);
+                    command.Parameters.AddWithValue("@NewName", movie.Name);
+                    command.Parameters.AddWithValue("@Genre", movie.Genre);
+                    command.Parameters.AddWithValue("@ReleaseYear", movie.ReleaseYear);
+
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Successfully updated movie information.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Movie not found or update failed.");
+                    }
                 }
-                else
-                {
-                    Console.WriteLine("Movie not found or update failed.");
-                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
             }
         }
 
-        public void DeleteMovie()
+        public void DeleteMovie(string Email)
         {
             Console.Write("Name of the movie that you want to delete: ");
             string MovieName = Console.ReadLine() ?? string.Empty;
 
-            string SQLiteDeleteCommand = "DELETE FROM Movies WHERE Name = @Name";
+            _Id = GetUserID(Email);
 
-            using (SQLiteCommand command = new SQLiteCommand(SQLiteDeleteCommand, _connection))
+            string SQLiteDeleteCommand = "DELETE FROM Movies WHERE Title = @Title AND UserID = @UserID";
+
+            try
             {
-                command.Parameters.AddWithValue("@Name", MovieName);
-
-                int RowsAffected = command.ExecuteNonQuery();
-
-                if (RowsAffected > 0)
+                using (SQLiteCommand command = new SQLiteCommand(SQLiteDeleteCommand, _connection))
                 {
-                    Console.WriteLine("Sucessfully deleted!");
+                    command.Parameters.AddWithValue("@Title", MovieName);
+                    command.Parameters.AddWithValue("@UserID", _Id);
+
+                    int RowsAffected = command.ExecuteNonQuery();
+
+                    if (RowsAffected > 0)
+                    {
+                        Console.WriteLine("Sucessfully deleted!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Movie not found or an error has happened during the process!");
+                    }
                 }
-                else
-                {
-                    Console.WriteLine("Movie not found or an error has happened during the process!");
-                }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
             }
         }
 
@@ -209,96 +307,140 @@ namespace DataBase
         {
             PasswordManager passwordManager = new PasswordManager();
 
-            string SQLiteCreateCommand = "INSERT INTO Accounts (Name, Email, Password, PhoneNumber) VALUES (@Name, @Email, @Password, @PhoneNumber)";
-            using (SQLiteCommand command = new SQLiteCommand(SQLiteCreateCommand, _connection))
-            {
-                command.Parameters.AddWithValue("@Name", Account.Name);
-                command.Parameters.AddWithValue("@Email", Account.Email);
-                command.Parameters.AddWithValue("@Password", passwordManager.HashPassword(Account));
-                command.Parameters.AddWithValue("@PhoneNumber", Account.PhoneNumber);
-                int RowsAffected = command.ExecuteNonQuery();
-
-                if (RowsAffected > 0)
-                {
-                    Console.WriteLine("Account created sucessfully");
-                }
-                else
-                {
-                    Console.WriteLine("An error happened!");
-                }
-            }
-        }
-        public string CheckEmailAccount()
-        {
-            AccountManagement accountManagement = new AccountManagement();
-            FileHandling log = new FileHandling();
-
-            string SQLiteSelectCommand = "SELECT * FROM Accounts WHERE Email = @Email";
-
+            string SQLiteCreateCommand = "INSERT INTO User (Name, Email, Password) VALUES (@Name, @Email, @Password)";
             try
             {
-                do
+                using (SQLiteCommand command = new SQLiteCommand(SQLiteCreateCommand, _connection))
                 {
-                    using (SQLiteCommand command = new SQLiteCommand(SQLiteSelectCommand, _connection))
+                    command.Parameters.AddWithValue("@Name", Account.Name);
+                    command.Parameters.AddWithValue("@Email", Account.Email);
+                    command.Parameters.AddWithValue("@Password", passwordManager.HashPassword(Account));
+
+                    int RowsAffected = command.ExecuteNonQuery();
+
+                    if (RowsAffected > 0)
                     {
-                        string Email = accountManagement.LoginAccountEmail();
-
-                        command.Parameters.AddWithValue("@Email", Email);
-
-                        using (SQLiteDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                Console.WriteLine($"Account finded!");
-                                return Email;
-                            }
-                        }
+                        Console.WriteLine("Account created sucessfully");
                     }
-                } while (true);
+                    else
+                    {
+                        Console.WriteLine("An error happened!");
+                    }
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
             }
             catch (Exception ex)
             {
                 log.SaveInLog(ex.Message);
             }
-            return "This email is not registered!";
         }
 
-        public bool CheckPassword(string Email)
-        {
-            AccountManagement accountManagement = new AccountManagement();
-            PasswordManager passwordManager = new PasswordManager();
-            FileHandling log = new FileHandling();
 
-            string SQLiteSelectCommand = "SELECT * FROM Accounts WHERE Email = @Email";
+        public bool CheckIfEmailExists(string Email)
+        {
+            string SQLiteCommand = "SELECT * FROM User WHERE Email = @Email";
+
+            try
+            {
+                using (SQLiteCommand command = new SQLiteCommand(SQLiteCommand, _connection))
+                {
+                    command.Parameters.AddWithValue("@Email", Email);
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Email Available!");
+                        }
+                    }
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+
+            return false;
+        }
+
+        public string CheckPassword(string Password, string Email)
+        {
+            _password = Password;
+
+            string SQLCommand = "SELECT * FROM User WHERE Email = @Email";
+
+            try
+            {
+                using (SQLiteCommand command = new SQLiteCommand(SQLCommand, _connection))
+                {
+                    command.Parameters.AddWithValue("@Email", Email);
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            _password = reader["Password"].ToString() ?? "";
+                            return _password;
+                        }
+                    }
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                log.SaveInLog(ex.Message);
+            }
+
+            return "Password not finded!";
+        }
+
+        private int GetUserID(string Email)
+        {
+            string SQLiteSelectCommand = "SELECT * FROM User WHERE Email = @Email";
 
             try
             {
                 using (SQLiteCommand command = new SQLiteCommand(SQLiteSelectCommand, _connection))
                 {
                     command.Parameters.AddWithValue("@Email", Email);
-
                     using (SQLiteDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            string DBPassword = reader["Password"].ToString() ?? string.Empty;
-                            string UserPassword = accountManagement.LoginAccountPassword();
-
-                            return passwordManager.CheckPassword(DBPassword, UserPassword) ? true : false;
+                            _Id = Convert.ToInt32(reader["UserID"]);
+                            return (int)_Id;
                         }
                     }
                 }
+            }
+            catch (ArgumentException ex)
+            {
+                log.SaveInLog(ex.Message);
             }
             catch (Exception ex)
             {
                 log.SaveInLog(ex.Message);
             }
-            return false;
+            return -1;
         }
+
 
         public void CloseDatabase()
         {
             _connection.Close();
+            Dispose();
         }
 
     }
